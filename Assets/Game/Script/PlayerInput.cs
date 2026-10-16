@@ -3,15 +3,8 @@ using UnityEngine;
 public class PlayerInput : MonoBehaviour
 {
     public Vector3 Direction { get; private set; }
-
-    private 
-    void Awake()
-    {
-        transform.position = new Vector3(0f, 0.5f, 0f);
-    }
-
-
-    void FixedUpdate()
+    
+    private void Update()
     {
         float x = Input.GetAxisRaw("Horizontal");
         float z = Input.GetAxisRaw("Vertical");
