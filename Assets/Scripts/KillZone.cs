@@ -18,13 +18,7 @@ namespace PinballSmasher
 
             if (body.TryGetComponent(out Robot robot))
             {
-                if (!robot.MarkDead()) return;
-
-                if (GameManager.Instance != null)
-                {
-                    GameManager.Instance.RegisterRobotKill(robot);
-                }
-                Destroy(robot.gameObject);
+                robot.Kill();
             }
             else if (body.TryGetComponent(out PlayerBall _))
             {

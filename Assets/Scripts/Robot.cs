@@ -15,6 +15,9 @@ namespace PinballSmasher
         [SerializeField] private float _stunDuration = 1f;
         [SerializeField] private float _pushPlayerForce = 3f; // толчок, если игрок врезался медленно
 
+        [Header("Fall")]
+        [SerializeField] private float _fallDeathY = -10f; // страховка, если робот пролетел мимо KillZone
+
         private Rigidbody _rb;
         private Rigidbody _playerBody;
         private Vector3 _playerVelocityBeforeHit;
@@ -41,6 +44,14 @@ namespace PinballSmasher
 
         private void FixedUpdate()
         {
+            // После сильного удара робот может перелететь край KillZone и падать вечно,
+            // а спавнер будет ждать его до бесконечности.
+            if (_rb.position.y < _fallDeathY)
+            {
+                Kill();
+                return;
+            }
+
             if (!HasPlayer()) return;
 
             // OnCollisionEnter приходит уже после расчёта столкновения, когда игрок успел затормозить.
@@ -100,12 +111,17 @@ namespace PinballSmasher
             }
         }
 
-        // Вызывает KillZone; возвращает false, если робот уже засчитан.
-        public bool MarkDead()
+        // Вызывают KillZone и проверка падения; повторный вызов ничего не делает.
+        public void Kill()
         {
-            if (IsDead) return false;
+            if (IsDead) return;
             IsDead = true;
-            return true;
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.RegisterRobotKill(this);
+            }
+            Destroy(gameObject);
         }
 
         private bool HasPlayer()

@@ -55,6 +55,19 @@ namespace PinballSmasher
         {
             Move();
             TryRush();
+            SuppressUpwardBounce();
+        }
+
+        // Материал Bouncy отражает шар без потерь, в том числе от пола, поэтому
+        // любой толчок вверх при ударе превращается в бесконечные прыжки.
+        // Шар катается по плоской арене, так что скорость вверх просто гасим.
+        private void SuppressUpwardBounce()
+        {
+            Vector3 velocity = _rb.linearVelocity;
+            if (velocity.y <= 0f) return;
+
+            velocity.y = 0f;
+            _rb.linearVelocity = velocity;
         }
 
         private void Move()

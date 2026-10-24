@@ -11,6 +11,8 @@ namespace PinballSmasher
         [Header("Placement")]
         [SerializeField] private float _spawnRadius = 8f; // центр — позиция спавнера
         [SerializeField] private float _spawnHeight = 1f;
+        [SerializeField] private float _spawnClearance = 1.5f; // радиус свободного места вокруг точки спавна
+        [SerializeField] private int _spawnAttempts = 10;
 
         [Header("Waves")]
         [SerializeField] private int _firstWaveSize = 2;
@@ -69,12 +71,37 @@ namespace PinballSmasher
                 return;
             }
 
-            float angle = Random.Range(0f, Mathf.PI * 2f);
-            Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * _spawnRadius;
-            Vector3 position = transform.position + offset + Vector3.up * _spawnHeight;
-            Quaternion rotation = Quaternion.LookRotation(-offset);
+            for (int attempt = 0; attempt < _spawnAttempts; attempt++)
+            {
+                float angle = Random.Range(0f, Mathf.PI * 2f);
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * _spawnRadius;
+                Vector3 position = transform.position + offset + Vector3.up * _spawnHeight;
+                if (!IsSpawnPointFree(position)) continue;
 
-            _aliveRobots.Add(Instantiate(_robotPrefab, position, rotation));
+                Quaternion rotation = Quaternion.LookRotation(-offset);
+                _aliveRobots.Add(Instantiate(_robotPrefab, position, rotation));
+                return;
+            }
+
+            Debug.LogWarning("EnemySpawner: не нашлось свободного места для робота.", this);
+        }
+
+        // Пол и стены не мешают, а вот внутри бампера, другого робота или игрока
+        // робот застрянет или его выстрелит физикой за арену.
+        private bool IsSpawnPointFree(Vector3 position)
+        {
+            Collider[] hits = Physics.OverlapSphere(position, _spawnClearance, ~0, QueryTriggerInteraction.Ignore);
+            foreach (Collider hit in hits)
+            {
+                if (hit.GetComponentInParent<Bumper>() != null) return false;
+
+                Rigidbody body = hit.attachedRigidbody;
+                if (body != null && (body.TryGetComponent(out Robot _) || body.TryGetComponent(out PlayerBall _)))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void OnDrawGizmosSelected()
